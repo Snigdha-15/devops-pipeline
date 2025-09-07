@@ -1,23 +1,15 @@
 pipeline {
   agent any
-  options { timestamps(); ansiColor('xterm') }
-
+  options { timestamps() }   // removed ansiColor
   environment {
     AWS_REGION     = 'us-east-2'
     DOCKER_IMAGE   = 'snigdha415/devops-app'
     CONTAINER_NAME = 'devops_app_container'
   }
-
   stages {
-    stage('Checkout') {
-      steps { checkout scm }
-    }
+    stage('Checkout') { steps { checkout scm } }
 
-    stage('Build Docker') {
-      steps {
-        sh 'docker build -t $DOCKER_IMAGE:${BUILD_NUMBER} .'
-      }
-    }
+    stage('Build Docker') { steps { sh 'docker build -t $DOCKER_IMAGE:${BUILD_NUMBER} .' } }
 
     stage('Push to Docker Hub') {
       steps {
@@ -50,7 +42,6 @@ pipeline {
               --parameters commands="docker pull $DOCKER_IMAGE:latest; docker rm -f $CONTAINER_NAME || true; docker run -d --name $CONTAINER_NAME --restart always -p 80:5000 $DOCKER_IMAGE:latest" \
               --query "Command.CommandId" --output text)
 
-            # wait for SSM command to finish
             for i in {1..30}; do
               STATUS=$(aws ssm list-command-invocations --region $AWS_REGION --command-id "$CMD_ID" \
                        --query "CommandInvocations[0].Status" --output text || true)
